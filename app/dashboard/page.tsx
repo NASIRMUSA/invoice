@@ -48,7 +48,7 @@ export default function DashboardScreen() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-6 hide-scrollbar">
+      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-32 hide-scrollbar">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

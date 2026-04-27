@@ -33,7 +33,7 @@ export default function HistoryScreen() {
         </Link>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-6 hide-scrollbar">
+      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-32 hide-scrollbar">
         
         {/* Summary Header */}
         <motion.div 

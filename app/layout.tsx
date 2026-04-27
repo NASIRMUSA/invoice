@@ -10,6 +10,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "InvoicePro NG",
   description: "Manage your business easily with professional tools.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'InvoicePro NG',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 import ThemeProvider from "./components/ThemeProvider";

@@ -95,7 +95,7 @@ export default function InventoryScreen() {
         </Link>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-24 hide-scrollbar">
+      <main className="flex-1 overflow-y-auto px-6 pt-4 pb-32 hide-scrollbar">
         <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">Inventory</h1>
         
         <motion.div 

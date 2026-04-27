@@ -37,7 +37,7 @@ export default function SettingsScreen() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 pb-24 hide-scrollbar pt-4">
+      <main className="flex-1 overflow-y-auto px-6 pb-32 hide-scrollbar pt-4">
         
         {/* Profile Card */}
         <motion.div 
