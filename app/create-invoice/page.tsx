@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/lib/viewmodels/appStore';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
-export default function CreateInvoiceScreen() {
+function CreateInvoiceContent() {
   const router = useRouter();
   const { products, invoices, customers, addInvoice } = useAppStore();
   const { showToast } = useToastStore();
@@ -255,5 +255,17 @@ export default function CreateInvoiceScreen() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreateInvoiceScreen() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-950">
+        <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <CreateInvoiceContent />
+    </Suspense>
   );
 }
