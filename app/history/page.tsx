@@ -100,33 +100,35 @@ export default function HistoryScreen() {
           className="flex flex-col gap-4"
         >
           {filteredInvoices.map((inv) => (
-            <div key={inv.id} className="bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-slate-50 dark:border-zinc-800 shadow-sm flex flex-col gap-3 hover:border-brand-primary/10 transition-colors">
-              <div className="flex justify-between items-start">
-                 <div className="flex items-center gap-2.5">
-                   <div className={`w-2.5 h-2.5 rounded-full ${
-                      inv.status === 'Paid' ? 'bg-green-500' :
-                      inv.status === 'Pending' ? 'bg-amber-500' :
-                      'bg-red-500'
-                    }`}></div>
-                   <span className="text-[11px] font-black text-gray-400 dark:text-gray-500 tracking-wider uppercase">{inv.id}</span>
-                 </div>
-                 <span className="text-base font-black text-gray-900 dark:text-white tracking-tight">₦{inv.totalAmount.toLocaleString()}</span>
-              </div>
-              
-              <div className="flex justify-between items-end">
-                <div>
-                  <h3 className="font-black text-gray-900 dark:text-white text-[15px] tracking-tight">{inv.customerName}</h3>
-                  <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tighter">{inv.date}</p>
+            <Link key={inv.id} href={`/invoice/${inv.id}`} className="block active:scale-[0.98] transition-all">
+              <div className="bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-slate-50 dark:border-zinc-800 shadow-sm flex flex-col gap-3 hover:border-brand-primary/20 transition-colors cursor-pointer">
+                <div className="flex justify-between items-start">
+                   <div className="flex items-center gap-2.5">
+                     <div className={`w-2.5 h-2.5 rounded-full ${
+                        inv.status === 'Paid' ? 'bg-green-500' :
+                        inv.status === 'Pending' ? 'bg-amber-500' :
+                        'bg-red-500'
+                      }`}></div>
+                     <span className="text-[11px] font-black text-gray-400 dark:text-gray-500 tracking-wider uppercase">{inv.id}</span>
+                   </div>
+                   <span className="text-base font-black text-gray-900 dark:text-white tracking-tight">₦{inv.totalAmount.toLocaleString()}</span>
                 </div>
-                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                  inv.status === 'Paid' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 border-green-100 dark:border-green-900/40' :
-                  inv.status === 'Pending' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100 dark:border-amber-900/40' :
-                  'bg-red-50 dark:bg-red-900/20 text-red-600 border-red-100 dark:border-red-900/40'
-                }`}>
-                  {inv.status}
+                
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h3 className="font-black text-gray-900 dark:text-white text-[15px] tracking-tight">{inv.customerName}</h3>
+                    <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-tighter">{inv.date}</p>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    inv.status === 'Paid' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 border-green-100 dark:border-green-900/40' :
+                    inv.status === 'Pending' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100 dark:border-amber-900/40' :
+                    'bg-red-50 dark:bg-red-900/20 text-red-600 border-red-100 dark:border-red-900/40'
+                  }`}>
+                    {inv.status}
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
           {filteredInvoices.length === 0 && (
             <div className="text-center py-12 opacity-30 flex flex-col items-center text-gray-400 dark:text-gray-500">

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/viewmodels/authStore';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import BottomNav from '../components/BottomNav';
 import { 
-  Menu, User, Briefcase, Bell, Banknote, Moon, HelpCircle, 
+  ArrowLeft, User, Briefcase, Bell, Banknote, Moon, HelpCircle, 
   Scale, FileText, LogOut, ChevronRight, CheckCircle2, ChevronLeft, Lock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -29,7 +29,7 @@ export default function SettingsScreen() {
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">
       <header className="px-6 pt-6 pb-2 flex justify-between items-center bg-transparent sticky top-0 z-20">
         <button onClick={() => router.back()} className="text-brand-primary dark:text-blue-500">
-          <Menu className="w-6 h-6" />
+          <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="text-[17px] font-black text-brand-primary dark:text-blue-500 tracking-tight">Settings</h1>
         <div className="w-9 h-9 bg-blue-50 dark:bg-zinc-800 rounded-full overflow-hidden flex items-center justify-center border border-blue-100 dark:border-zinc-700 shadow-sm">
@@ -148,27 +148,27 @@ export default function SettingsScreen() {
             transition={{ duration: 0.3, delay: 0.3 }}
             className="bg-white dark:bg-zinc-900 rounded-[24px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-zinc-800 overflow-hidden"
           >
-            <button className="w-full px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-zinc-800/50 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+            <Link href="/settings/help" className="w-full px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-zinc-800/50 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
               <div className="flex items-center gap-4">
                 <HelpCircle className="w-5 h-5 text-brand-primary" />
                 <span className="text-[15px] font-bold text-gray-900 dark:text-white">Help Center</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-            </button>
-            <button className="w-full px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-zinc-800/50 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+            </Link>
+            <Link href="/settings/privacy" className="w-full px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-zinc-800/50 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
               <div className="flex items-center gap-4">
                 <Scale className="w-5 h-5 text-brand-primary" />
                 <span className="text-[15px] font-bold text-gray-900 dark:text-white">Privacy Policy</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-            </button>
-            <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+            </Link>
+            <Link href="/settings/terms" className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
               <div className="flex items-center gap-4">
                 <FileText className="w-5 h-5 text-brand-primary" />
                 <span className="text-[15px] font-bold text-gray-900 dark:text-white">Terms of Service</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-            </button>
+            </Link>
           </motion.div>
         </div>
 
