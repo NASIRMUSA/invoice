@@ -1,17 +1,18 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, EyeOff, Eye, Wallet } from 'lucide-react';
+import { Mail, Lock, EyeOff, Eye, Wallet, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/lib/viewmodels/authStore';
+import { createClient } from '@/lib/supabase/client';
 
 function AppLoader({ onFinish }: { onFinish: () => void }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const duration = 2400;
+    const duration = 800;
     const interval = 30;
     const step = (interval / duration) * 100;
     const timer = setInterval(() => {
@@ -34,11 +35,9 @@ function AppLoader({ onFinish }: { onFinish: () => void }) {
       exit={{ opacity: 0, scale: 1.04 }}
       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
     >
-      {/* Subtle radial background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(37,99,235,0.06),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_40%,rgba(37,99,235,0.1),transparent_70%)]" />
 
       <div className="relative z-10 flex flex-col items-center">
-        {/* Logo with pulse ring */}
         <div className="relative mb-8">
           <motion.div
             className="absolute inset-0 rounded-[24px] bg-brand-primary/20"
@@ -56,7 +55,6 @@ function AppLoader({ onFinish }: { onFinish: () => void }) {
           </motion.div>
         </div>
 
-        {/* App Name */}
         <motion.h1
           className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight mb-1"
           initial={{ opacity: 0, y: 12 }}
@@ -76,7 +74,6 @@ function AppLoader({ onFinish }: { onFinish: () => void }) {
           Smart invoicing for Nigeria
         </motion.p>
 
-        {/* Progress Bar */}
         <motion.div
           className="mt-10 w-48 h-[3px] bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"
           initial={{ opacity: 0, scaleX: 0.5 }}
@@ -90,7 +87,6 @@ function AppLoader({ onFinish }: { onFinish: () => void }) {
           />
         </motion.div>
 
-        {/* Loading dots */}
         <motion.div
           className="flex items-center gap-1 mt-4"
           initial={{ opacity: 0 }}
@@ -115,18 +111,124 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+
   const router = useRouter();
   const { showToast } = useToastStore();
-  const { login } = useAuthStore();
+  const { setUser } = useAuthStore();
+  const supabase = createClient();
 
-  const handleAuth = () => {
-    login();
+  // Password Strength Logic
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    return strength;
+  }, [password]);
+
+  const strengthLabel = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColor = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-emerald-500'];
+
+  const isFormComplete = useMemo(() => {
     if (isLogin) {
-      showToast('Successfully signed in!', 'success');
-    } else {
-      showToast('Account created successfully!', 'success');
+      return email.length > 0 && password.length > 0;
     }
-    router.push('/dashboard');
+    return email.length > 0 && password.length > 0 && fullName.length > 0;
+  }, [isLogin, email, password, fullName]);
+
+  const validateForm = () => {
+    if (!email.includes('@') || !email.includes('.')) {
+      showToast('Please enter a valid email address', 'error');
+      return false;
+    }
+
+    if (!isLogin) {
+      if (fullName.trim().length < 3) {
+        showToast('Full name must be at least 3 characters', 'error');
+        return false;
+      }
+      if (password.length < 8) {
+        showToast('Password must be at least 8 characters long', 'error');
+        return false;
+      }
+      if (!/[A-Z]/.test(password)) {
+        showToast('Password must contain at least one uppercase letter', 'error');
+        return false;
+      }
+      if (!/[0-9]/.test(password)) {
+        showToast('Password must contain at least one number', 'error');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    if (!email || !password || (!isLogin && !fullName)) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        setUser({
+          id: data.user.id,
+          email: data.user.email!,
+          fullName: data.user.user_metadata?.full_name,
+        });
+
+        showToast('Successfully signed in!', 'success');
+        router.push('/dashboard');
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          setUser({
+            id: data.user.id,
+            email: data.user.email!,
+            fullName: fullName,
+          });
+          
+          showToast('Account created successfully!', 'success');
+          router.push('/dashboard');
+        }
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Authentication failed', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -136,7 +238,7 @@ export default function AuthScreen() {
       </AnimatePresence>
 
       <motion.div
-        className="flex flex-col flex-1 bg-white dark:bg-zinc-950 px-8 pt-16 pb-8 transition-colors"
+        className="flex flex-col flex-1 bg-white dark:bg-zinc-950 px-8 pt-16 pb-8 transition-colors min-h-screen"
         initial={{ opacity: 0 }}
         animate={{ opacity: isLoading ? 0 : 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -159,6 +261,7 @@ export default function AuthScreen() {
         </motion.div>
 
         <motion.form 
+          onSubmit={handleAuth}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 10 : 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
@@ -169,6 +272,8 @@ export default function AuthScreen() {
               <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-2 block tracking-widest">Full Name</label>
               <input 
                 type="text" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. John Doe"
                 className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-2xl py-4 px-4 outline-none focus:border-brand-primary dark:focus:border-brand-primary font-medium text-gray-900 dark:text-white"
               />
@@ -179,6 +284,8 @@ export default function AuthScreen() {
             <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-2 block tracking-widest">Email Address</label>
             <input 
               type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="name@business.com"
               className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-2xl py-4 px-4 outline-none focus:border-brand-primary dark:focus:border-brand-primary font-medium text-gray-900 dark:text-white"
             />
@@ -192,6 +299,8 @@ export default function AuthScreen() {
             <div className="relative">
               <input 
                 type={showPassword ? 'text' : 'password'} 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-2xl py-4 px-4 outline-none focus:border-brand-primary dark:focus:border-brand-primary font-medium text-gray-900 dark:text-white"
               />
@@ -203,33 +312,52 @@ export default function AuthScreen() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+
+            {/* Password Strength Indicator */}
+            {!isLogin && password.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3"
+              >
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Strength: {strengthLabel[passwordStrength]}</span>
+                  {passwordStrength >= 3 && <ShieldCheck size={12} className="text-emerald-500" />}
+                </div>
+                <div className="flex gap-1 h-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div 
+                      key={step}
+                      className={`flex-1 rounded-full transition-all duration-500 ${step <= passwordStrength ? strengthColor[passwordStrength] : 'bg-slate-100 dark:bg-zinc-800'}`}
+                    />
+                  ))}
+                </div>
+                {passwordStrength < 3 && (
+                  <div className="flex items-start gap-1.5 mt-2">
+                    <AlertCircle size={10} className="text-amber-500 mt-0.5" />
+                    <p className="text-[9px] text-gray-400 font-bold leading-tight">Use 8+ characters, one uppercase, and one number for a secure account.</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
 
           <button 
-            type="button" 
-            onClick={handleAuth}
-            className="w-full bg-brand-primary text-white py-5 rounded-2xl font-black text-xl shadow-2xl shadow-brand-primary/30 mt-4 active:scale-[0.98] transition-all"
+            type="submit" 
+            disabled={isSubmitting || !isFormComplete}
+            className="w-full bg-brand-primary text-white py-5 rounded-2xl font-black text-xl shadow-2xl shadow-brand-primary/30 mt-4 active:scale-[0.98] transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            {isLogin ? 'Sign In' : 'Create Account'}
+            {isSubmitting ? (
+              <motion.div 
+                className="w-6 h-6 border-3 border-white border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+            ) : (
+              isLogin ? 'Sign In' : 'Create Account'
+            )}
           </button>
         </motion.form>
-
-        {/* <div className="flex items-center gap-4 my-10">
-          <div className="flex-1 h-px bg-slate-100"></div>
-          <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Or continue with</span>
-          <div className="flex-1 h-px bg-slate-100"></div>
-        </div>
-
-        <div className="flex gap-4">
-          <button className="flex-1 flex items-center justify-center gap-3 border border-slate-100 py-3.5 rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98]">
-             <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-             <span className="font-black text-gray-700 text-sm">Google</span>
-          </button>
-          <button className="flex-1 flex items-center justify-center gap-3 border border-slate-100 py-3.5 rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98]">
-             <Lock size={20} className="text-gray-400" />
-             <span className="font-black text-gray-700 text-sm">Biometric</span>
-          </button>
-        </div> */}
 
         <motion.div 
           initial={{ opacity: 0 }}

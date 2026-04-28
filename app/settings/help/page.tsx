@@ -138,6 +138,10 @@ export default function HelpCenterScreen() {
                 <motion.button
                   key={item.id}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (item.id === 'security') router.push('/settings/help/security');
+                    if (item.id === 'inventory') router.push('/settings/help/inventory');
+                  }}
                   className="w-full bg-white dark:bg-zinc-900 rounded-[20px] px-5 py-4 flex items-center gap-4 text-left shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-zinc-800 transition-colors hover:bg-slate-50 dark:hover:bg-zinc-800/50"
                 >
                   <div className="w-10 h-10 bg-blue-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -168,6 +172,11 @@ export default function HelpCenterScreen() {
                 <motion.button
                   key={cat.id}
                   whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    if (cat.id === 'invoices') router.push('/settings/help/invoices');
+                    if (cat.id === 'clients') router.push('/settings/help/customers');
+                    if (cat.id === 'reports') router.push('/settings/help/reports');
+                  }}
                   className="bg-white dark:bg-zinc-900 rounded-[20px] p-5 flex flex-col items-center justify-center gap-2.5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors aspect-square"
                 >
                   <div className="w-11 h-11 bg-blue-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center">
