@@ -57,19 +57,15 @@ export default function SubscriptionContent() {
   const handleSubscribe = (plan: typeof plans[0]) => {
     setLoadingPlan(plan.id);
     
-    try {
-      // Construct the URL with user email as a query parameter for a better experience
-      const paymentUrl = new URL(plan.link);
-      if (user?.email) {
-        paymentUrl.searchParams.append('email', user.email);
-      }
-      
-      // Redirect to Paystack Payment Page
-      window.location.href = paymentUrl.toString();
-    } catch (err) {
-      console.error('Invalid Paystack link:', plan.link);
-      window.location.href = plan.link; // Fallback to raw link
+    // Construct the URL with user email as a query parameter for a better experience
+    // Paystack payment pages automatically pick up 'email' parameter
+    const paymentUrl = new URL(plan.link);
+    if (user?.email) {
+      paymentUrl.searchParams.append('email', user.email);
     }
+    
+    // Redirect to Paystack Payment Page
+    window.location.href = paymentUrl.toString();
   };
 
   return (

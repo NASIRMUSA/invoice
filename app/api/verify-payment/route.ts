@@ -13,20 +13,13 @@ export async function POST(request: Request) {
     
     // 1. Verify with Paystack
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    console.log('[PAYSTACK VERIFY] Secret Key prefix:', paystackSecretKey?.substring(0, 7));
-    
-    if (!paystackSecretKey) {
-      console.error('[PAYSTACK VERIFY] Secret Key missing in .env');
-    }
-
     const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: { Authorization: `Bearer ${paystackSecretKey}` }
     });
     const data = await response.json();
-    console.log('[PAYSTACK VERIFY] Response from Paystack:', JSON.stringify(data, null, 2));
     
     if (!data.status || data.data.status !== 'success') {
-      console.error('[PAYSTACK VERIFY] Paystack verification failed:', data);
+      console.error('Paystack verification failed:', data);
       return NextResponse.json({ message: 'Paystack verification failed' }, { status: 400 });
     }
 
