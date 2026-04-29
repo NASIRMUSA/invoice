@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import { useAppStore } from '@/lib/viewmodels/appStore';
@@ -15,14 +15,25 @@ export default function EditProfileScreen() {
   const { showToast } = useToastStore();
   
   const [formData, setFormData] = useState({
-    fullName: userProfile.fullName || '',
-    email: userProfile.email || '',
-    phone: userProfile.phone || '',
+    fullName: userProfile?.fullName || '',
+    email: userProfile?.email || '',
+    phone: userProfile?.phone || '',
     sector: 'Professional Services'
   });
 
-  const handleSave = () => {
-    updateUserProfile({
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        fullName: userProfile.fullName || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || '',
+        sector: 'Professional Services'
+      });
+    }
+  }, [userProfile]);
+
+  const handleSave = async () => {
+    await updateUserProfile({
       fullName: formData.fullName,
       email: formData.email,
       phone: formData.phone
@@ -30,6 +41,7 @@ export default function EditProfileScreen() {
     showToast('Profile updated successfully!', 'success');
     router.back();
   };
+
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">

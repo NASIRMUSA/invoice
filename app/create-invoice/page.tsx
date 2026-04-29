@@ -55,8 +55,7 @@ function CreateInvoiceContent() {
   const subtotal = selectedItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const total = subtotal + (subtotal * 0.075);
 
-  const handleGenerate = () => {
-    const nextId = `INV-${String(invoices.length + 1).padStart(3, '0')}`;
+  const handleGenerate = async () => {
     const newInvoice = {
       customerName: customerName || 'Adeola Bakare',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -68,10 +67,19 @@ function CreateInvoiceContent() {
       status: 'Paid' as const
     };
     
-    addInvoice(newInvoice);
-    showToast(`Invoice ${nextId} created successfully!`, 'success');
-    router.push(`/invoice/${nextId}`);
+    // We want to wait for the invoice to be created to get the ID
+    // Since our addInvoice in appStore doesn't return the ID yet, we'll fetch it from the state after update 
+    // or better, update addInvoice to return it.
+    await addInvoice(newInvoice);
+    
+    // Get the latest invoice ID (the one we just added)
+    const latestInvoice = useAppStore.getState().invoices[0];
+    const invoiceId = latestInvoice?.id || 'new';
+    
+    showToast(`Invoice ${invoiceId} created successfully!`, 'success');
+    router.push(`/invoice/${invoiceId}`);
   };
+
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">

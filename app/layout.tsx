@@ -28,6 +28,7 @@ export const viewport = {
 import ThemeProvider from "./components/ThemeProvider";
 import ToastProvider from "./components/ToastProvider";
 import SecurityWrapper from "./components/SecurityWrapper";
+import DataInitializer from "./components/DataInitializer";
 
 export default function RootLayout({
   children,
@@ -44,7 +45,9 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="w-full max-w-md bg-white dark:bg-zinc-900 min-h-screen relative shadow-2xl overflow-hidden flex flex-col font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300">
             <SecurityWrapper>
-              {children}
+              <DataInitializer>
+                {children}
+              </DataInitializer>
             </SecurityWrapper>
             <ToastProvider />
           </div>

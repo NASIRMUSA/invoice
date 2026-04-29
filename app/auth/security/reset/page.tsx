@@ -126,7 +126,7 @@ export default function ResetPinScreen() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Verify via Email</p>
-                    <p className="text-base font-black text-gray-900 dark:text-white tracking-tight">{maskEmail(userProfile.email)}</p>
+                    <p className="text-base font-black text-gray-900 dark:text-white tracking-tight">{maskEmail(userProfile?.email || '')}</p>
                   </div>
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${method === 'email' ? 'border-brand-primary bg-brand-primary' : 'border-slate-200 dark:border-zinc-700'}`}>
                     {method === 'email' && <div className="w-2 h-2 bg-white rounded-full" />}
@@ -142,7 +142,7 @@ export default function ResetPinScreen() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Verify via SMS</p>
-                    <p className="text-base font-black text-gray-900 dark:text-white tracking-tight">{maskPhone(userProfile.phone || '')}</p>
+                    <p className="text-base font-black text-gray-900 dark:text-white tracking-tight">{maskPhone(userProfile?.phone || '')}</p>
                   </div>
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${method === 'sms' ? 'border-brand-primary bg-brand-primary' : 'border-slate-200 dark:border-zinc-700'}`}>
                     {method === 'sms' && <div className="w-2 h-2 bg-white rounded-full" />}

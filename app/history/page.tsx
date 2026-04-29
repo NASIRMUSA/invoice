@@ -5,9 +5,10 @@ import { useAppStore, useDashboardStats } from '@/lib/viewmodels/appStore';
 import BottomNav from '../components/BottomNav';
 import { Wallet, User, Search, Filter, TrendingUp, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ListSkeleton } from '../components/Skeleton';
 
 export default function HistoryScreen() {
-  const { invoices } = useAppStore();
+  const { invoices, isLoading } = useAppStore();
   const stats = useDashboardStats();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -18,6 +19,8 @@ export default function HistoryScreen() {
     inv.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
     inv.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) return <div className="p-6"><ListSkeleton /></div>;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">

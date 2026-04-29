@@ -6,9 +6,10 @@ import { useToastStore } from '@/lib/viewmodels/toastStore';
 import BottomNav from '../components/BottomNav';
 import { Wallet, User, Search, Plus, PackageOpen, AlertTriangle, X, Edit2, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { InventorySkeleton } from '../components/Skeleton';
 
 export default function InventoryScreen() {
-  const { products, addProduct, updateProduct, deleteProduct } = useAppStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading } = useAppStore();
   const stats = useDashboardStats();
   const { showToast } = useToastStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +81,8 @@ export default function InventoryScreen() {
   
   const activeStock = products.filter(p => !p.isLowStock).length;
   const lowStock = products.filter(p => p.isLowStock).length;
+  
+  if (isLoading) return <InventorySkeleton />;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">

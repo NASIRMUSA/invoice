@@ -6,9 +6,10 @@ import BottomNav from '../components/BottomNav';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import { Search, SlidersHorizontal, Users, Wallet, ChevronRight, Plus, User, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ListSkeleton } from '../components/Skeleton';
 
 export default function CustomersScreen() {
-  const { customers, addCustomer, userProfile } = useAppStore();
+  const { customers, addCustomer, userProfile, isLoading } = useAppStore();
   const { showToast } = useToastStore();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -59,6 +60,8 @@ export default function CustomersScreen() {
   const totalOutstanding = customers
     .filter(c => c.status === 'Outstanding')
     .reduce((acc, c) => acc + c.amount, 0);
+  
+  if (isLoading) return <div className="p-6"><ListSkeleton /></div>;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">
@@ -68,7 +71,7 @@ export default function CustomersScreen() {
         </button>
         <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Customers</span>
         <Link href="/settings" className="w-10 h-10 bg-blue-50 dark:bg-zinc-800 rounded-full overflow-hidden flex items-center justify-center border border-blue-100 dark:border-zinc-700 shadow-sm transition-transform active:scale-95 hover:scale-105 cursor-pointer">
-           {userProfile.avatar ? (
+           {userProfile?.avatar ? (
              <img src={userProfile.avatar} alt="Profile" className="w-full h-full object-cover" />
            ) : (
              <User className="w-6 h-6 text-brand-primary" />

@@ -1,134 +1,285 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product, Invoice, DashboardStats, UserProfile, BusinessProfile, Customer } from '../models/types';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
 
 interface AppState {
-  userProfile: UserProfile;
-  businessProfile: BusinessProfile;
+  userProfile: UserProfile | null;
+  businessProfile: BusinessProfile | null;
   products: Product[];
   invoices: Invoice[];
   customers: Customer[];
   isDarkMode: boolean;
   securityPin: string | null;
   isLocked: boolean;
+  isLoading: boolean;
+  error: string | null;
   
   // Actions
   setSecurityPin: (pin: string | null) => void;
   setLocked: (isLocked: boolean) => void;
-  updateUserProfile: (profile: Partial<UserProfile>) => void;
-  updateBusinessProfile: (profile: Partial<BusinessProfile>) => void;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (id: string, product: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  addInvoice: (invoice: Omit<Invoice, 'id'>) => void;
-  addCustomer: (customer: Omit<Customer, 'id'>) => void;
-  updateCustomer: (id: string, customer: Partial<Customer>) => void;
-  deleteCustomer: (id: string) => void;
+  fetchInitialData: () => Promise<void>;
+  updateUserProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  updateBusinessProfile: (profile: Partial<BusinessProfile>) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  addInvoice: (invoice: Omit<Invoice, 'id'>) => Promise<void>;
+  addCustomer: (customer: Omit<Customer, 'id'>) => Promise<void>;
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
+  updateSubscription: (status: string, expiry: string) => Promise<void>;
   toggleDarkMode: () => void;
+  clearData: () => void;
 }
-
-// Initial mock data
-const initialProducts: Product[] = [
-  { id: '1', name: 'Digital Quartz Watch', quantity: 53, price: 15000, isLowStock: false },
-  { id: '2', name: 'Pro Audio Headphones', quantity: 2, price: 12000, isLowStock: true },
-  { id: '3', name: 'Classic Canvas Shoes', quantity: 120, price: 12500, isLowStock: false },
-  { id: '4', name: 'Luxury Sunglasses', quantity: 22, price: 6000, isLowStock: false },
-];
-
-const initialInvoices: Invoice[] = [
-  { id: 'INV-001', customerName: 'Adesola Ojekemi', date: 'Oct 21, 2023', items: [], totalAmount: 450000.00, status: 'Paid' },
-  { id: 'INV-002', customerName: 'Chukwudi Obi', date: 'Oct 22, 2023', items: [], totalAmount: 1200000.00, status: 'Pending' },
-  { id: 'INV-003', customerName: 'Grace Emmanuel', date: 'Oct 18, 2023', items: [], totalAmount: 85000.00, status: 'Overdue' },
-  { id: 'INV-004', customerName: 'Lagos Logistics Ltd', date: 'Oct 15, 2023', items: [], totalAmount: 520000.00, status: 'Paid' },
-];
-
-const initialCustomers: Customer[] = [
-  { id: '1', name: 'Adeola Bakare', email: 'adeola.bakare@example.com', phone: '+234 802 345 6789', location: 'Lagos, NG', status: 'Outstanding', amount: 245000, initials: 'AB', color: 'bg-blue-100 text-blue-600', avatar: '/adeola_avatar.png' },
-  { id: '2', name: 'Chidi Okoro', location: 'Abuja, FCT', status: 'Paid', amount: 0, initials: 'CO', color: 'bg-green-400 text-green-900' },
-  { id: '3', name: 'Funke Sholaye', location: 'Ibadan, Oyo', status: 'Pending', amount: 12500, initials: 'FS', color: 'bg-blue-100 text-blue-600' },
-  { id: '4', name: 'Ibrahim Musa', location: 'Kano, Nigeria', status: 'Outstanding', amount: 890000, initials: 'IM', color: 'bg-blue-100 text-blue-600' },
-];
-
-const initialUserProfile: UserProfile = {
-  fullName: 'Nasir Adeyemi',
-  email: 'nasir.adeyemi@invoicepro.ng',
-  phone: '+234 800 000 0000',
-  subscription_status: 'active',
-  subscription_expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-};
-
-const initialBusinessProfile: BusinessProfile = {
-  name: 'InvoicePro NG',
-  email: 'hello@invoicepro.ng',
-  address: '12 Admiralty Way, Lekki',
-  phone: '+234 800 000 0000',
-  website: 'www.invoicepro.ng',
-  tin: '12345678-0001'
-};
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
-      userProfile: initialUserProfile,
-      businessProfile: initialBusinessProfile,
-      products: initialProducts,
-      invoices: initialInvoices,
-      customers: initialCustomers,
+    (set, get) => ({
+      userProfile: null,
+      businessProfile: null,
+      products: [],
+      invoices: [],
+      customers: [],
       isDarkMode: false,
       securityPin: null,
       isLocked: false,
+      isLoading: true,
+      error: null,
       
       setSecurityPin: (pin) => set({ securityPin: pin }),
       setLocked: (isLocked) => set({ isLocked }),
       
-      updateUserProfile: (profile) => set((state) => ({ userProfile: { ...state.userProfile, ...profile } })),
-      updateBusinessProfile: (profile) => set((state) => ({ businessProfile: { ...state.businessProfile, ...profile } })),
-      
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
-      
-      addProduct: (product) => set((state) => ({
-        products: [...state.products, { ...product, id: Math.random().toString(36).substr(2, 9) }]
-      })),
-      
-      updateProduct: (id, product) => set((state) => ({
-        products: state.products.map(p => p.id === id ? { ...p, ...product } : p)
-      })),
 
-      deleteProduct: (id) => set((state) => ({
-        products: state.products.filter(p => p.id !== id)
-      })),
-      
-      addInvoice: (invoice) => set((state) => {
-        // Also deduct inventory
-        const newProducts = [...state.products];
-        invoice.items.forEach(item => {
-          const pIdx = newProducts.findIndex(p => p.id === item.product.id);
-          if (pIdx > -1) {
-            newProducts[pIdx].quantity = Math.max(0, newProducts[pIdx].quantity - item.quantity);
-            newProducts[pIdx].isLowStock = newProducts[pIdx].quantity <= 5;
+      fetchInitialData: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            set({ isLoading: false });
+            return;
           }
-        });
-        
-        return {
-          invoices: [{ ...invoice, id: `INV-${String(state.invoices.length + 1).padStart(3, '0')}` }, ...state.invoices],
-          products: newProducts
-        };
-      }),
-      
-      addCustomer: (customer) => set((state) => ({
-        customers: [...state.customers, { ...customer, id: Math.random().toString(36).substr(2, 9) }]
-      })),
 
-      updateCustomer: (id, customer) => set((state) => ({
-        customers: state.customers.map(c => c.id === id ? { ...c, ...customer } : c)
-      })),
+          // Fetch all data in parallel
+          const [productsRes, invoicesRes, customersRes, profileRes, businessRes] = await Promise.all([
+            supabase.from('products').select('*').eq('user_id', user.id).order('name'),
+            supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+            supabase.from('customers').select('*').eq('user_id', user.id).order('name'),
+            supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+            supabase.from('business_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+          ]);
+
+          set({
+            products: productsRes.data || [],
+            invoices: invoicesRes.data || [],
+            customers: customersRes.data || [],
+            userProfile: profileRes.data || null,
+            businessProfile: businessRes.data || null,
+            isLoading: false
+          });
+        } catch (error: any) {
+          console.error('Error fetching data:', error);
+          set({ error: error.message, isLoading: false });
+        }
+      },
       
-      deleteCustomer: (id) => set((state) => ({
-        customers: state.customers.filter(c => c.id !== id)
-      }))
+      updateUserProfile: async (profile) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Map camelCase to snake_case for DB
+        const dbProfile = {
+          full_name: profile.fullName,
+          email: profile.email,
+          phone: profile.phone,
+          avatar: profile.avatar
+        };
+        
+        const { error } = await supabase.from('profiles').update(dbProfile).eq('id', user.id);
+        if (!error) {
+          set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, ...profile } : null }));
+        }
+      },
+
+      updateBusinessProfile: async (profile) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const { error } = await supabase.from('business_profiles').upsert({ ...profile, user_id: user.id }).eq('user_id', user.id);
+        if (!error) {
+          set((state) => ({ businessProfile: state.businessProfile ? { ...state.businessProfile, ...profile } : profile as any }));
+        }
+      },
+      
+      addProduct: async (product) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Map camelCase to snake_case for DB
+        const dbProduct = {
+          name: product.name,
+          quantity: product.quantity,
+          price: product.price,
+          user_id: user.id,
+          is_low_stock: product.quantity < 5
+        };
+        
+        const { data, error } = await supabase.from('products').insert([dbProduct]).select().single();
+        if (!error && data) {
+          const mappedProduct: Product = {
+            id: data.id,
+            name: data.name,
+            quantity: data.quantity,
+            price: Number(data.price),
+            isLowStock: data.is_low_stock
+          };
+          set((state) => ({ products: [...state.products, mappedProduct] }));
+        }
+      },
+      
+      updateProduct: async (id, product) => {
+        const dbProduct: any = {};
+        if (product.name) dbProduct.name = product.name;
+        if (product.quantity !== undefined) {
+          dbProduct.quantity = product.quantity;
+          dbProduct.is_low_stock = product.quantity < 5;
+        }
+        if (product.price !== undefined) dbProduct.price = product.price;
+
+        const { error } = await supabase.from('products').update(dbProduct).eq('id', id);
+        if (!error) {
+          set((state) => ({
+            products: state.products.map(p => p.id === id ? { ...p, ...product, isLowStock: product.quantity !== undefined ? product.quantity < 5 : p.isLowStock } : p)
+          }));
+        }
+      },
+
+      deleteProduct: async (id) => {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (!error) {
+          set((state) => ({
+            products: state.products.filter(p => p.id !== id)
+          }));
+        }
+      },
+      
+      addInvoice: async (invoice) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const dbInvoice = {
+          user_id: user.id,
+          customer_name: invoice.customerName,
+          date: invoice.date,
+          items: invoice.items,
+          total_amount: invoice.totalAmount,
+          status: invoice.status
+        };
+        
+        const { data, error } = await supabase.from('invoices').insert([dbInvoice]).select().single();
+        
+        if (!error && data) {
+          const mappedInvoice: Invoice = {
+            id: data.id,
+            customerName: data.customer_name,
+            date: data.date,
+            items: data.items,
+            totalAmount: Number(data.total_amount),
+            status: data.status
+          };
+
+          // Deduct inventory locally and sync
+          const newProducts = [...get().products];
+          for (const item of invoice.items) {
+            const pIdx = newProducts.findIndex(p => p.id === item.product.id);
+            if (pIdx > -1) {
+              const newQty = Math.max(0, newProducts[pIdx].quantity - item.quantity);
+              await supabase.from('products').update({ 
+                quantity: newQty,
+                is_low_stock: newQty <= 5 
+              }).eq('id', item.product.id);
+              
+              newProducts[pIdx].quantity = newQty;
+              newProducts[pIdx].isLowStock = newQty <= 5;
+            }
+          }
+          
+          set({
+            invoices: [mappedInvoice, ...get().invoices],
+            products: newProducts
+          });
+        }
+      },
+      
+      addCustomer: async (customer) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const { data, error } = await supabase.from('customers').insert([{ ...customer, user_id: user.id }]).select().single();
+        if (!error && data) {
+          set((state) => ({ customers: [...state.customers, data] }));
+        }
+      },
+
+      updateCustomer: async (id, customer) => {
+        const { error } = await supabase.from('customers').update(customer).eq('id', id);
+        if (!error) {
+          set((state) => ({
+            customers: state.customers.map(c => c.id === id ? { ...c, ...customer } : c)
+          }));
+        }
+      },
+      
+      deleteCustomer: async (id) => {
+        const { error } = await supabase.from('customers').delete().eq('id', id);
+        if (!error) {
+          set((state) => ({
+            customers: state.customers.filter(c => c.id !== id)
+          }));
+        }
+      },
+      
+      updateSubscription: async (status, expiry) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const dbProfile = {
+          subscription_status: status,
+          subscription_expiry: expiry
+        };
+        
+        const { error } = await supabase.from('profiles').update(dbProfile).eq('id', user.id);
+        if (!error) {
+          set((state) => ({ 
+            userProfile: state.userProfile ? { 
+              ...state.userProfile, 
+              subscription_status: status as any, 
+              subscription_expiry: expiry 
+            } : null 
+          }));
+        }
+      },
+      
+      clearData: () => set({
+        userProfile: null,
+        businessProfile: null,
+        products: [],
+        invoices: [],
+        customers: [],
+        securityPin: null,
+        isLocked: false,
+        error: null
+      })
     }),
     {
       name: 'invoicepro-storage',
+      partialize: (state) => ({
+        isDarkMode: state.isDarkMode,
+        securityPin: state.securityPin,
+      }),
     }
   )
 );
@@ -145,3 +296,4 @@ export const useDashboardStats = (): DashboardStats => {
   
   return { totalSales, totalProducts, totalStockValue, weeklyProfit };
 };
+

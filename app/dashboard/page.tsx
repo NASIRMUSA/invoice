@@ -5,9 +5,10 @@ import { useAppStore, useDashboardStats } from '@/lib/viewmodels/appStore';
 import BottomNav from '../components/BottomNav';
 import { Menu, User, TrendingUp, Package, Wallet, Plus, PlusCircle, CheckCircle2, AlertCircle, Clock, ChevronRight, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DashboardSkeleton } from '../components/Skeleton';
 
 export default function DashboardScreen() {
-  const { invoices, isDarkMode, toggleDarkMode, userProfile } = useAppStore();
+  const { invoices, isDarkMode, toggleDarkMode, userProfile, isLoading } = useAppStore();
   const stats = useDashboardStats();
   
   const [mounted, setMounted] = useState(false);
@@ -23,6 +24,8 @@ export default function DashboardScreen() {
     if (amount >= 1000) return `₦${(amount / 1000).toFixed(0)}K`;
     return `₦${amount}`;
   };
+
+  if (isLoading) return <DashboardSkeleton />;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">
@@ -56,7 +59,7 @@ export default function DashboardScreen() {
           className="mb-6"
         >
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-            Hi, {userProfile?.fullName.split(' ')[0]} 👋
+            Hi, {userProfile?.fullName?.split(' ')[0] || 'User'} 👋
           </h1>
           <p className="text-gray-400 dark:text-gray-500 text-[13px] font-medium mt-1 uppercase tracking-wider">Here's your business overview</p>
         </motion.div>

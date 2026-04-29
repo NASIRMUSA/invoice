@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Check, ArrowLeft, ShieldCheck, 
@@ -7,10 +7,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/viewmodels/authStore';
-
-// Update these with your actual Paystack Payment Page links
-const PAYSTACK_MONTHLY_LINK = process.env.NEXT_PUBLIC_PAYSTACK_MONTHLY_LINK || 'https://paystack.com/pay/invoicepro-monthly';
-const PAYSTACK_YEARLY_LINK = process.env.NEXT_PUBLIC_PAYSTACK_YEARLY_LINK || 'https://paystack.com/pay/invoicepro-yearly';
+import { useAppStore } from '@/lib/viewmodels/appStore';
+import { useToastStore } from '@/lib/viewmodels/toastStore';
+import { PaystackButton } from 'react-paystack';
 
 const plans = [
   {
@@ -27,8 +26,7 @@ const plans = [
       'Email Support'
     ],
     featured: false,
-    buttonText: 'Start Monthly Plan',
-    link: PAYSTACK_MONTHLY_LINK
+    buttonText: 'Start Monthly Plan'
   },
   {
     id: 'yearly',
@@ -44,28 +42,43 @@ const plans = [
       'Team Access (Up to 3 users)'
     ],
     featured: true,
-    buttonText: 'Start Yearly Plan',
-    link: PAYSTACK_YEARLY_LINK
+    buttonText: 'Start Yearly Plan'
   }
 ];
 
 export default function SubscriptionContent() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { userProfile, updateSubscription } = useAppStore();
+  const { showToast } = useToastStore();
 
-  const handleSubscribe = (plan: typeof plans[0]) => {
-    setLoadingPlan(plan.id);
-    
-    // Construct the URL with user email as a query parameter for a better experience
-    // Paystack payment pages automatically pick up 'email' parameter
-    const paymentUrl = new URL(plan.link);
-    if (user?.email) {
-      paymentUrl.searchParams.append('email', user.email);
+  // If already paid and not expired, send to dashboard
+  useEffect(() => {
+    if (userProfile?.subscription_status === 'active') {
+      const expiry = userProfile.subscription_expiry ? new Date(userProfile.subscription_expiry) : null;
+      if (!expiry || expiry > new Date()) {
+        router.push('/dashboard');
+      }
     }
-    
-    // Redirect to Paystack Payment Page
-    window.location.href = paymentUrl.toString();
+  }, [userProfile, router]);
+
+  const onSuccess = (reference: any, planId: string) => {
+    // Calculate expiry date
+    const now = new Date();
+    const expiry = new Date();
+    if (planId === 'monthly') {
+      expiry.setMonth(now.getMonth() + 1);
+    } else {
+      expiry.setFullYear(now.getFullYear() + 1);
+    }
+
+    updateSubscription('active', expiry.toISOString());
+    showToast('Subscription successful! Welcome to Pro.', 'success');
+    router.push('/dashboard');
+  };
+
+  const onClose = () => {
+    showToast('Payment cancelled.', 'info');
   };
 
   return (
@@ -134,28 +147,20 @@ export default function SubscriptionContent() {
                 ))}
               </ul>
 
-              <button 
-                onClick={() => handleSubscribe(plan)} 
-                disabled={loadingPlan !== null}
+              <PaystackButton
                 className={`w-full py-4 rounded-2xl font-black text-[15px] transition-all flex items-center justify-center gap-2 ${
                   plan.featured 
-                    ? 'bg-white text-brand-primary hover:bg-blue-50 active:scale-[0.98] disabled:opacity-70 shadow-lg shadow-blue-900/20' 
-                    : 'bg-brand-primary text-white hover:bg-blue-600 active:scale-[0.98] disabled:opacity-70 shadow-lg shadow-blue-500/10'
+                    ? 'bg-white text-brand-primary hover:bg-blue-50 active:scale-[0.98] shadow-lg shadow-blue-900/20' 
+                    : 'bg-brand-primary text-white hover:bg-blue-600 active:scale-[0.98] shadow-lg shadow-blue-500/10'
                 }`}
-              >
-                {loadingPlan === plan.id ? (
-                  <motion.div 
-                    className={`w-5 h-5 border-2 ${plan.featured ? 'border-brand-primary' : 'border-white'} border-t-transparent rounded-full`} 
-                    animate={{ rotate: 360 }} 
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }} 
-                  />
-                ) : (
-                  <>
-                    <Zap size={18} fill="currentColor" />
-                    {plan.buttonText}
-                  </>
-                )}
-              </button>
+                text={plan.buttonText}
+                publicKey={process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''}
+                amount={plan.price * 100}
+                email={user?.email || ''}
+                reference={(new Date()).getTime().toString()}
+                onSuccess={(ref: any) => onSuccess(ref, plan.id)}
+                onClose={onClose}
+              />
             </motion.div>
           ))}
         </div>

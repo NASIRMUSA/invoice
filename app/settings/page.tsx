@@ -11,6 +11,7 @@ import {
   Scale, FileText, LogOut, ChevronRight, CheckCircle2, ChevronLeft, Lock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -19,7 +20,10 @@ export default function SettingsScreen() {
   const { logout } = useAuthStore();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    useAppStore.getState().clearData();
     logout();
     showToast('Logged out successfully', 'success');
     router.push('/auth');

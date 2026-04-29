@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import { useAppStore } from '@/lib/viewmodels/appStore';
@@ -14,15 +14,27 @@ export default function BusinessInfoScreen() {
   const { showToast } = useToastStore();
   
   const [formData, setFormData] = useState({
-    businessName: businessProfile.name || '',
-    address: businessProfile.address || '',
-    phone: businessProfile.phone || '',
-    website: businessProfile.website || '',
-    tin: businessProfile.tin || ''
+    businessName: businessProfile?.name || '',
+    address: businessProfile?.address || '',
+    phone: businessProfile?.phone || '',
+    website: businessProfile?.website || '',
+    tin: businessProfile?.tin || ''
   });
 
-  const handleSave = () => {
-    updateBusinessProfile({
+  useEffect(() => {
+    if (businessProfile) {
+      setFormData({
+        businessName: businessProfile.name || '',
+        address: businessProfile.address || '',
+        phone: businessProfile.phone || '',
+        website: businessProfile.website || '',
+        tin: businessProfile.tin || ''
+      });
+    }
+  }, [businessProfile]);
+
+  const handleSave = async () => {
+    await updateBusinessProfile({
       name: formData.businessName,
       address: formData.address,
       phone: formData.phone,
@@ -32,6 +44,7 @@ export default function BusinessInfoScreen() {
     showToast('Business information updated!', 'success');
     router.back();
   };
+
 
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 dark:bg-zinc-950/50 relative overflow-hidden transition-colors">

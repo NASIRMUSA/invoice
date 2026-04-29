@@ -1,14 +1,17 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppStore } from '@/lib/viewmodels/appStore';
+import { useAuthStore } from '@/lib/viewmodels/authStore';
 import { useToastStore } from '@/lib/viewmodels/toastStore';
 import { Lock, Delete, Check, ShieldCheck, Fingerprint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LockOverlay() {
   const router = useRouter();
+  const pathname = usePathname();
   const { securityPin, isLocked, setLocked } = useAppStore();
+  const { isAuthenticated } = useAuthStore();
   const { showToast } = useToastStore();
   const [pin, setPin] = useState<string[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -43,7 +46,9 @@ export default function LockOverlay() {
     }
   }, [pin, securityPin, setLocked, showToast]);
 
-  if (!isLocked || !securityPin || isInitializing) return null;
+  const isPublicRoute = pathname === '/' || pathname?.startsWith('/auth');
+
+  if (!isAuthenticated || !isLocked || !securityPin || isInitializing || isPublicRoute) return null;
 
   const handleNumberClick = (num: string) => {
     if (pin.length < 4) {
