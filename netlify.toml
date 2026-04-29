@@ -1,0 +1,10 @@
+[build]
+  command = "pnpm run build"
+  publish = ".next"
+
+[build.environment]
+  # Tell Netlify to allow these public keys in the build output
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_PAYSTACK_YEARLY_LINK,NEXT_PUBLIC_PAYSTACK_MONTHLY_LINK,NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
