@@ -52,7 +52,9 @@ const initialCustomers: Customer[] = [
 const initialUserProfile: UserProfile = {
   fullName: 'Nasir Adeyemi',
   email: 'nasir.adeyemi@invoicepro.ng',
-  phone: '+234 800 000 0000'
+  phone: '+234 800 000 0000',
+  subscription_status: 'active',
+  subscription_expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 };
 
 const initialBusinessProfile: BusinessProfile = {

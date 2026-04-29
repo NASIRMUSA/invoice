@@ -46,6 +46,8 @@ export interface UserProfile {
   email: string;
   phone?: string;
   avatar?: string;
+  subscription_status?: 'active' | 'expired' | 'none';
+  subscription_expiry?: string;
 }
 
 export interface BusinessProfile {
