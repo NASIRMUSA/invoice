@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -75,7 +76,12 @@ export async function POST(request: Request) {
     // Try to update plan_id separately in case it doesn't exist
     await supabase.from('profiles').update({ plan_id: planId }).eq('id', user!.id);
 
-    console.log('Profile updated successfully');
+    // Force Next.js to refresh the dashboard and subscription status
+    revalidatePath('/dashboard', 'layout');
+    revalidatePath('/auth/subscription', 'page');
+    revalidatePath('/auth/subscription/expired', 'page');
+
+    console.log('Profile updated successfully and cache cleared');
     return NextResponse.json({ message: 'Success' }, { status: 200 });
   } catch (error: any) {
     console.error('Catch block error in verify-payment:', error);
